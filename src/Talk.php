@@ -124,6 +124,7 @@ class Talk
         if ($conversations->user_one == $this->authUserId || $conversations->user_two == $this->authUserId) {
             $withUser = ($conversations->userone->id === $this->authUserId) ? $conversations->usertwo : $conversations->userone;
             $collection->withUser = $withUser;
+            $collection->conversation = $conversations;
             $collection->messages = $conversations->messages;
 
             return $collection;
