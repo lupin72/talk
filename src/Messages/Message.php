@@ -60,6 +60,6 @@ class Message extends Model
    * */
     public function sender()
     {
-        return $this->user()->with('channel');
+        return $this->user()->with('channels');
     }
 }
