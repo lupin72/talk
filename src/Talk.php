@@ -114,11 +114,10 @@ class Talk
         $message->conversation->touch();
         if($this->conversation->isConversationBlocked($conversationId)) {
             $message->deleted_from_receiver = 1;
-            $message->save();
+            $message->update();
         } else {
             $this->broadcast->transmission($message);
         }
-
         return $message;
     }
 
@@ -229,6 +228,15 @@ class Talk
         return $this->conversation->isExistsAmongTwoUsers($user['one'], $user['two']);
     }
 
+    public function getBlacklistByUserId($receiverId) {
+
+        if ($receiverId) {
+            return $this->blacklist->getBlackListByUserId($this->authUserId, $receiverId);
+        }
+
+        return false;
+    }
+
     public function isUserBlocked($receiverId) {
 
         if ($receiverId) {
@@ -236,6 +244,28 @@ class Talk
         }
 
         return false;
+    }
+    
+    public function blockUser($receiverId) {
+        if ($receiverId && !$this->isUserBlocked($receiverId)) {
+            $blacklist = $this->blacklist->create([
+                'blocked_id' => $receiverId,
+                'user_id'   => $this->authUserId
+            ]);
+            return $blacklist->id;
+        }
+    }
+
+    public function unblockUser($receiverId) {
+        if ($receiverId && $this->isUserBlocked($receiverId)) {
+            $blacklist_id = $this->blacklist->getBlackListByUserId($receiverId, $this->authUserId);
+            $blacklist = $this->blacklist->find($blacklist_id);
+            if($blacklist) {
+                $blacklist->delete();
+                return true;
+            }
+            return false;
+        }
     }
 
     /**

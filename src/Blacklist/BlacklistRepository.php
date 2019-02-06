@@ -31,5 +31,15 @@ class BlacklistRepository extends Repository
 
         return $exists;
     }
+    
+    public function getBlackListByUserId($blocked_id, $user_id) {
+          $blacklist = Blacklist::where('blocked_id', $blocked_id)
+                        ->where('user_id', $user_id)
+                        ->first();
+          if($blacklist) {
+            return $blacklist->id;
+          }
+          return false;
+        }
 
 }

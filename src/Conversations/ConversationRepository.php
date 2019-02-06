@@ -69,6 +69,15 @@ class ConversationRepository extends Repository
         return $exists;
     }
     
+    public function isConversationBlocked($conversationId) {
+            $conversation = $this->find($conversationId);
+            if($conversation && $conversation->status === 0) {
+                return true;
+            }
+            return false;
+        }
+    
+    
     public function isUserBlocked($receiverId) {
 
         if ($receiverId) {
