@@ -14,6 +14,7 @@ namespace Nahid\Talk;
 use Illuminate\Contracts\Config\Repository;
 use Nahid\Talk\Conversations\ConversationRepository;
 use Nahid\Talk\Messages\MessageRepository;
+use Nahid\Talk\Blacklist\BlacklistRepository;
 use Nahid\Talk\Live\Broadcast;
 
 class Talk
@@ -40,6 +41,13 @@ class Talk
     protected $message;
 
     /**
+     * The MessageRepository class instance.
+     *
+     * @var \Nahid\Talk\Blacklist\Blacklist\BlacklistRepository
+     */
+    protected $blacklist;
+
+    /**
      * Broadcast class instance.
      *
      * @var \Nahid\Talk\Live\Broadcast
@@ -59,11 +67,12 @@ class Talk
      * @param \Nahid\Talk\Conversations\ConversationRepository $conversation
      * @param \Nahid\Talk\Messages\MessageRepository           $message
      */
-    public function __construct(Repository $config, Broadcast $broadcast, ConversationRepository $conversation, MessageRepository $message)
+    public function __construct(Repository $config, Broadcast $broadcast, ConversationRepository $conversation, MessageRepository $message, BlacklistRepository $blacklist)
     {
         $this->config = $config;
         $this->conversation = $conversation;
         $this->message = $message;
+        $this->blacklist = $blacklist;
         $this->broadcast = $broadcast;
     }
 
@@ -94,16 +103,21 @@ class Talk
      */
     protected function makeMessage($conversationId, $message)
     {
+
         $message = $this->message->create([
             'message' => $message,
             'conversation_id' => $conversationId,
             'user_id' => $this->authUserId,
             'is_seen' => 0,
         ]);
-
+       
         $message->conversation->touch();
-
-        $this->broadcast->transmission($message);
+        if($this->conversation->isConversationBlocked($conversationId)) {
+            $message->deleted_from_receiver = 1;
+            $message->save();
+        } else {
+            $this->broadcast->transmission($message);
+        }
 
         return $message;
     }
@@ -144,14 +158,18 @@ class Talk
     {
         $conversationId = $this->isConversationExists($receiverId);
         $user = $this->getSerializeUser($this->authUserId, $receiverId);
-
+        $isBlocked = $this->isUserBlocked($receiverId);
         if ($conversationId === false) {
             $conversation = $this->conversation->create([
                 'user_one' => $user['one'],
                 'user_two' => $user['two'],
                 'status' => 1,
             ]);
-
+            if($isBlocked) {
+                $conversation->blocked_by = $this->authUserId;
+                $conversation->status = 0;
+                $conversation->update();
+            }
             if ($conversation) {
                 return $conversation->id;
             }
@@ -209,6 +227,15 @@ class Talk
         $user = $this->getSerializeUser($this->authUserId, $userId);
 
         return $this->conversation->isExistsAmongTwoUsers($user['one'], $user['two']);
+    }
+
+    public function isUserBlocked($receiverId) {
+
+        if ($receiverId) {
+            return $this->blacklist->isUserBlocked($this->authUserId, $receiverId);
+        }
+
+        return false;
     }
 
     /**

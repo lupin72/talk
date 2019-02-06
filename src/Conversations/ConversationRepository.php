@@ -68,6 +68,16 @@ class ConversationRepository extends Repository
 
         return $exists;
     }
+    
+    public function isUserBlocked($receiverId) {
+
+        if ($receiverId) {
+            return $this->blacklist->isUserBlocked($this->authUserId, $receiverId);
+        }
+
+        return false;
+    }
+    
 
     /*
      * retrieve all message thread without soft deleted message with latest one message and

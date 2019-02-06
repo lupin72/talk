@@ -19,11 +19,13 @@ class BlacklistRepository extends Repository
     public function isUserBlocked($user1, $user2)
     {
         $exists = Blacklist::
-            where(function ($query) use ($user1) {
-                $query->where('blocked_id', $user1)->orWhere('user_id', $user1);
+            where(function ($query) use ($user1, $user2) {
+                $query->where('blocked_id', $user1)
+                ->where('user_id', $user2);
             })
-            ->orWhere(function ($query) use ($user2) {
-              $query->where('blocked_id', $user2)->orWhere('user_id', $user2);
+            ->orWhere(function ($query) use ($user1,$user2) {
+              $query->where('blocked_id', $user2)
+              ->where('user_id', $user1);
           })
             ->exists();
 
