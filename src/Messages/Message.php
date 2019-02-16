@@ -19,6 +19,10 @@ class Message extends Model
         'user_id',
         'conversation_id',
     ];
+    
+    protected $dispatchesEvents = [
+      'created' => MessageCreated::class
+    ];
 
     /*
      * make dynamic attribute for human readable time
