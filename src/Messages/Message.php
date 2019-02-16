@@ -3,6 +3,7 @@
 namespace Nahid\Talk\Messages;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Events\MessageCreated;
 
 class Message extends Model
 {
